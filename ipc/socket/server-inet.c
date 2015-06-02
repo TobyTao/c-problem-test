@@ -18,6 +18,7 @@
 #include  <sys/wait.h>
 #include  <arpa/inet.h>
 
+#define   SERVER_PORT             ((uint16_t)32141)
 #define   BUF_SIZE                ((uint16_t)2048)
 #define   ipcSocketPrint(...)     printf(__VA_ARGS__)
 
@@ -48,7 +49,7 @@ static void ipcSocketServerInet(void)
   }
   
   serverAddress.sin_family = AF_INET;
-  serverAddress.sin_port   = htons(3218);
+  serverAddress.sin_port   = htons(SERVER_PORT);
   serverAddress.sin_addr.s_addr = INADDR_ANY;
   bzero(&(serverAddress.sin_zero), 8);
 
@@ -77,7 +78,7 @@ static void ipcSocketServerInet(void)
       memset(buf, 0, BUF_SIZE);
       len = read(client, buf, BUF_SIZE);
       ipcSocketPrint("Recv Message length: %d \n%s\n", len, buf);
-      //write(client, "Hello Client, nice to meet you", 30);
+      write(client, "Hello Client, nice to meet you", 30);
       close(client);
       exit(0);
     }

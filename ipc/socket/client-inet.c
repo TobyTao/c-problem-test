@@ -19,30 +19,36 @@
 #include  <arpa/inet.h>
 
 
-#define       LINUX_DOMAIN    "./ipc-socket-domain"
+#define       SERVER_IP       "127.0.0.1"
+#define       SERVER_PORT     ((uint16_t)32141)
 #define       ipcSocketPrint(...)     printf(__VA_ARGS__)
 #define       BUF_SIZE        ((uint16_t)2048)
 
-static void ipcSocketClientInet(void);
+static void ipcSocketClientInet(int process);
 
 int main(int arg, char **argv)
 {
+  uint16_t i;
   arg = arg;
   argv = argv;
 
-  ipcSocketClientInet();
+  for (i = 0; i < 3; i++) {
+    if (0 == fork()) {
+      ipcSocketClientInet(i);
+    }
+  }
   return 0;
 }
 
 
-static void ipcSocketClientInet(void)
+static void ipcSocketClientInet(int process)
 {
-  int connectServer;
   int result;
+  int connectServer;
   char buf[BUF_SIZE];
   uint16_t len;
-  uint16_t i;
   struct sockaddr_in serverAddress;
+
 
   connectServer = socket(AF_INET, SOCK_STREAM, 0);
   if (connectServer == -1) {
@@ -51,29 +57,25 @@ static void ipcSocketClientInet(void)
   }
 
   serverAddress.sin_family = AF_INET;
-  serverAddress.sin_port   = htons(3218);
-  inet_aton("127.0.0.1", &serverAddress.sin_addr);
+  serverAddress.sin_port   = htons(SERVER_PORT);
+  inet_aton(SERVER_IP, &serverAddress.sin_addr);
 
-  for (i = 0; i < 3; i++) {
-    if (0 == fork()) {
-      usleep(10000);
-      memset(buf, 0, BUF_SIZE);
-      sprintf(buf, "Process: %d Hello Server!\n", i);
-      result = connect(connectServer, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
-      if (result == -1) {
-        ipcSocketPrint("Process: %d fail to connectServer\n", i);
-        exit(1);
-      }
-
-      write(connectServer, buf, strlen(buf));
-      ipcSocketPrint("Send Message Len: %d\n%s\n", strlen(buf), buf);
-      //len = read(connectServer, buf, BUF_SIZE);
-      //ipcSocketPrint("Recv Message Len: %d\n%s\n", len, buf);
-      close(connectServer);
-      exit(0);
-    }
+  memset(buf, 0, BUF_SIZE);
+  sprintf(buf, "Process: %d Hello Server!\n", process);
+  result = connect(connectServer, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
+  if (result == -1) {
+    ipcSocketPrint("Process: %d fail to connectServer\n", process);
+    exit(1);
   }
+
+  write(connectServer, buf, strlen(buf));
+  ipcSocketPrint("Send Message Len: %d\n%s\n", strlen(buf), buf);
+  len = read(connectServer, buf, BUF_SIZE);
+  ipcSocketPrint("Recv Message Len: %d\n%s\n", len, buf);
+  close(connectServer);
+  exit(0);
 
   wait(&result);
   return;
 }
+
