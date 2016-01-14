@@ -90,5 +90,4 @@ static uint8_t  getNumber(char data)
 
   return 0xFF;
 }
-// just for test
-// change it again
+//
